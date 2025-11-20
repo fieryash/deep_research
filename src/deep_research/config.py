@@ -12,16 +12,16 @@ class ModelConfig(BaseModel):
     """LLM model configuration to keep roles separate."""
 
     summarizer_model: str = Field(
-        default="openai/gpt-4o-mini", description="Model used for summarizing snippets."
+        default="google/gemini-2.0-flash-exp", description="Model used for summarizing snippets."
     )
     researcher_model: str = Field(
-        default="openai/gpt-4o", description="Model that runs the research agent."
+        default="google/gemini-2.0-flash-exp", description="Model that runs the research agent."
     )
     synthesizer_model: str = Field(
-        default="openai/gpt-4o", description="Model that writes the final report."
+        default="google/gemini-2.0-flash-exp", description="Model that writes the final report."
     )
     reviewer_model: str = Field(
-        default="openai/gpt-4o-mini", description="Model that critiques the report."
+        default="google/gemini-2.0-flash-exp", description="Model that critiques the report."
     )
 
 

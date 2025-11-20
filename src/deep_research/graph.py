@@ -108,6 +108,33 @@ class DeepResearchPipeline:
         log_path = str(self.logger.log(run_id, final_state))
         return ResearchRunResult(run_id=run_id, state=final_state, log_path=log_path)
 
+    async def run_stream(self, query: str, *, scope: str | None = None, metadata: Dict[str, Any] | None = None):
+        run_id = uuid4().hex
+        base_messages = [HumanMessage(content=f"Research question: {query}")]
+        if metadata:
+            base_messages.append(HumanMessage(content=str(metadata)))
+        initial_state: ResearchState = {
+            "query": query,
+            "scope": scope,
+            "plan": [],
+            "findings": [],
+            "draft_report": None,
+            "review": None,
+            "needs_revision": False,
+            "loop_count": 0,
+            "messages": base_messages,
+        }
+        
+        final_state = initial_state
+        async for chunk in self.graph.astream(initial_state):
+            for node, update in chunk.items():
+                if isinstance(update, dict):
+                    final_state.update(update)
+                yield {"type": "update", "node": node, "content": update}
+        
+        log_path = str(self.logger.log(run_id, final_state))
+        yield {"type": "result", "data": ResearchRunResult(run_id=run_id, state=final_state, log_path=log_path)}
+
     async def shutdown(self) -> None:
         if self.mcp_gateway:
             await self.mcp_gateway.shutdown()

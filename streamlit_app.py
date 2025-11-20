@@ -24,8 +24,30 @@ def load_pipeline() -> DeepResearchPipeline:
     return DeepResearchPipeline(config)
 
 
+async def run_pipeline_async(pipeline: DeepResearchPipeline, question: str, scope: Optional[str]) -> ResearchRunResult:
+    container = st.status("Starting research...", expanded=True)
+    result = None
+    async for event in pipeline.run_stream(question, scope=scope):
+        if event["type"] == "update":
+            node = event["node"]
+            container.write(f"Completed step: **{node}**")
+            if node == "plan":
+                container.markdown("Plan generated.")
+            elif node == "research":
+                container.markdown("Research gathered.")
+            elif node == "synth":
+                container.markdown("Draft report written.")
+            elif node == "review":
+                container.markdown("Review completed.")
+        elif event["type"] == "result":
+            result = event["data"]
+    
+    container.update(label="Research Complete!", state="complete", expanded=False)
+    return result
+
+
 def run_pipeline(pipeline: DeepResearchPipeline, question: str, scope: Optional[str]) -> ResearchRunResult:
-    return asyncio.run(pipeline.run(question, scope=scope))
+    return asyncio.run(run_pipeline_async(pipeline, question, scope))
 
 
 def render_result(result: ResearchRunResult) -> None:
@@ -62,6 +84,5 @@ if submitted:
     if not question.strip():
         st.error("Please enter a research question.")
     else:
-        with st.spinner("Working through LangGraph pipeline..."):
-            result = run_pipeline(pipeline, question.strip(), scope.strip() or None)
+        result = run_pipeline(pipeline, question.strip(), scope.strip() or None)
         render_result(result)
