@@ -8,6 +8,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
 
 from ..prompts import SYNTHESIZER_PROMPT
+from ..retry import ainvoke_with_retry
 from ..state import ResearchState
 
 
@@ -17,12 +18,13 @@ def create_synthesizer_node(model: BaseChatModel):
 
     async def _node(state: ResearchState) -> Dict[str, Any]:
         findings_text = "\n".join(f"- {finding.source}: {finding.content}" for finding in state.get("findings", []))
-        report = await chain.ainvoke(
+        report = await ainvoke_with_retry(
+            chain,
             {
                 "query": state["query"],
                 "scope": state.get("scope") or "",
                 "findings": findings_text or "No findings yet",
-            }
+            },
         )
         messages = list(state.get("messages", [])) + [AIMessage(content=report, name="synthesizer")]
         return {"draft_report": report, "needs_revision": False, "messages": messages}

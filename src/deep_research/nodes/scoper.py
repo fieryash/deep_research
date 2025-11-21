@@ -8,6 +8,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
 
 from ..prompts import SCOPER_PROMPT
+from ..retry import ainvoke_with_retry
 from ..state import ResearchState
 
 
@@ -19,12 +20,13 @@ def create_scoper_node(model: BaseChatModel):
 
     async def _node(state: ResearchState) -> Dict[str, Any]:
         history = "\n".join(message.content for message in state.get("messages", [])[-4:])
-        scope = await chain.ainvoke(
+        scope = await ainvoke_with_retry(
+            chain,
             {
                 "query": state["query"],
                 "scope": state.get("scope") or "(not defined yet)",
                 "history": history or "(no prior conversation)",
-            }
+            },
         )
         messages = list(state.get("messages", [])) + [AIMessage(content=scope, name="scoper")]
         return {"scope": scope, "messages": messages}

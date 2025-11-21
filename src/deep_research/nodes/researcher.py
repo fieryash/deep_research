@@ -8,6 +8,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
 
 from ..prompts import RESEARCHER_PROMPT
+from ..retry import ainvoke_with_retry
 from ..state import Finding, ResearchState
 from ..tools import MCPToolGateway, TavilySearchResult, TavilySearchTool
 
@@ -78,12 +79,13 @@ class ResearcherNode:
             evidence_blobs.append(f"{finding.source}: {finding.content}")
             new_findings.append(finding)
 
-        research_summary = await self._chain.ainvoke(
+        research_summary = await ainvoke_with_retry(
+            self._chain,
             {
                 "query": query,
                 "plan": "\n".join(plan_steps),
                 "findings": "\n\n".join(evidence_blobs) or "No external evidence gathered yet",
-            }
+            },
         )
 
         new_findings.append(Finding(source="researcher", content=research_summary, confidence=0.8))

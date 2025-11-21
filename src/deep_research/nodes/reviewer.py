@@ -9,6 +9,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
 
 from ..prompts import REVIEWER_PROMPT
+from ..retry import ainvoke_with_retry
 from ..state import ResearchState, ReviewResult
 
 
@@ -20,11 +21,12 @@ def create_reviewer_node(model: BaseChatModel):
         if not state.get("draft_report"):
             return {"needs_revision": True}
 
-        critique_raw = await chain.ainvoke(
+        critique_raw = await ainvoke_with_retry(
+            chain,
             {
                 "query": state["query"],
                 "report": state.get("draft_report") or "",
-            }
+            },
         )
         try:
             parsed: ReviewResult = json.loads(critique_raw)
