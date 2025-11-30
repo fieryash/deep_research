@@ -15,6 +15,7 @@ def _build_openai(model_id: str, api_key: str | None) -> BaseChatModel:
         _, name = model_id.split("/", maxsplit=1)
     else:
         name = model_id
+    api_key = api_key.strip() if api_key else None
     if not api_key:
         raise ValueError("OPENAI_API_KEY missing but required for OpenAI models")
     return ChatOpenAI(model=name, api_key=api_key, temperature=0.2)
@@ -31,7 +32,8 @@ def _build_google(model_id: str, api_key: str | None) -> BaseChatModel:
         model=name, 
         google_api_key=api_key, 
         temperature=0.2,
-        max_retries=2,
+        # Rely on our own tenacity wrapper instead of the client's internal retry loop
+        max_retries=0,
         timeout=60
     )
 

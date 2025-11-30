@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from langchain_core.messages import BaseMessage
+
 from .state import ResearchState
 
 
@@ -15,6 +17,14 @@ def _to_serializable(value: Any) -> Any:
         return value.isoformat()
     if is_dataclass(value):
         return {k: _to_serializable(v) for k, v in asdict(value).items()}
+    if isinstance(value, BaseMessage):
+        # Flatten LangChain messages so logs remain JSON serializable
+        return {
+            "type": value.type,
+            "content": value.content,
+            "name": getattr(value, "name", None),
+            "additional_kwargs": getattr(value, "additional_kwargs", {}),
+        }
     if isinstance(value, list):
         return [_to_serializable(v) for v in value]
     if isinstance(value, dict):

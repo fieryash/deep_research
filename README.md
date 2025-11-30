@@ -50,6 +50,15 @@ All config flows through `deep_research.config.AppConfig`, which reads `.env` (v
 | `MAX_RESEARCH_LOOPS` | Reviewer-driven safety rail (default `2`). Controls how many times we loop back for revisions. |
 | `PERSISTENCE_DIR` / `CACHE_DIR` | Override locations for JSON logs and scratch artifacts (defaults: `data/logs` and `.cache`). |
 
+Changing models: defaults point to Gemini (`google/gemini-2.0-flash-exp`). To switch to OpenAI, set env vars like:
+
+```bash
+MODELS__SUMMARIZER_MODEL=openai/gpt-4o-mini
+MODELS__RESEARCHER_MODEL=openai/gpt-4o-mini
+MODELS__SYNTHESIZER_MODEL=openai/gpt-4o-mini
+MODELS__REVIEWER_MODEL=openai/gpt-4o-mini
+```
+
 Need to verify Gemini access or enumerate models? Use the helper scripts:
 
 - `python list_models.py` - calls `google.generativeai` to list models exposing `generateContent`.

@@ -18,6 +18,10 @@ _DEFAULT_STATUS_CODES = {408, 409, 429, 500, 502, 503, 504}
 _KEYWORDS = ("rate limit", "quota", "exceeded", "temporarily unavailable")
 
 
+class QuotaExhaustedError(RuntimeError):
+    """Raised when a provider reports zero remaining quota."""
+
+
 def _extract_status_code(exc: Exception) -> int | None:
     for attr in ("status_code", "status", "code"):
         value = getattr(exc, attr, None)
@@ -33,7 +37,22 @@ def _extract_status_code(exc: Exception) -> int | None:
     return None
 
 
+def _is_zero_quota(exc: Exception) -> bool:
+    """Detect cases where the provider reports no available quota."""
+
+    message = str(exc).lower()
+    if "insufficient_quota" in message or "insufficient quota" in message:
+        return True
+    return "limit: 0" in message or ("quota exceeded" in message and "limit" in message)
+
+
 def _should_retry(exc: Exception) -> bool:
+    if isinstance(exc, QuotaExhaustedError):
+        return False
+    if _is_zero_quota(exc):
+        # Failing fast avoids hammering a provider when quota is disabled
+        return False
+
     status_code = _extract_status_code(exc)
     if status_code and status_code in _DEFAULT_STATUS_CODES:
         return True
@@ -64,7 +83,14 @@ async def ainvoke_with_retry(
         before_sleep=before_sleep_log(logger, logging.WARNING),
     ):
         with attempt:
-            return await chain.ainvoke(payload)
+            try:
+                return await chain.ainvoke(payload)
+            except Exception as exc:
+                if _is_zero_quota(exc):
+                    raise QuotaExhaustedError(
+                        "Provider reported zero available quota. Switch models or enable billing."
+                    ) from exc
+                raise
 
 
-__all__ = ["ainvoke_with_retry"]
+__all__ = ["QuotaExhaustedError", "ainvoke_with_retry"]

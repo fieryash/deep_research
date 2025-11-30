@@ -45,7 +45,12 @@ class SearchConfig(BaseModel):
 class AppConfig(BaseSettings):
     """Top-level settings for the Deep Research Studio app."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        env_nested_delimiter="__",
+    )
 
     environment: Literal["dev", "prod"] = Field(default="dev")
     models: ModelConfig = Field(default_factory=ModelConfig)
