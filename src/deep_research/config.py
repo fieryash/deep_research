@@ -1,11 +1,13 @@
 """Application configuration and settings helpers."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
-from pydantic import AnyHttpUrl, BaseModel, Field
+from pydantic import AliasChoices, AnyHttpUrl, BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import dotenv_values
 
 
 class ModelConfig(BaseModel):
@@ -39,7 +41,10 @@ class MCPServerConfig(BaseModel):
 
 class SearchConfig(BaseModel):
     provider: Literal["tavily", "mcp", "duckduckgo"] = "tavily"
-    tavily_api_key: Optional[str] = None
+    tavily_api_key: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("SEARCH__TAVILY_API_KEY", "TAVILY_API_KEY"),
+    )
 
 
 class AppConfig(BaseSettings):
@@ -64,6 +69,18 @@ class AppConfig(BaseSettings):
     anthropic_api_key: Optional[str] = Field(default=None)
     google_api_key: Optional[str] = Field(default=None)
     google_cx: Optional[str] = Field(default=None)
+
+    @model_validator(mode="after")
+    def _fill_tavily_fallback(self):
+        # Allow plain TAVILY_API_KEY env var even though the field is nested.
+        if not self.search.tavily_api_key:
+            env_val = os.getenv("TAVILY_API_KEY")
+            if not env_val:
+                # Also look directly in the .env file without mutating os.environ
+                env_map = dotenv_values(".env")
+                env_val = env_map.get("TAVILY_API_KEY")
+            self.search.tavily_api_key = env_val
+        return self
 
     def ensure_dirs(self) -> None:
         """Create cache/persistence paths if missing."""

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Tuple
 from uuid import uuid4
@@ -32,6 +33,7 @@ class DeepResearchPipeline:
     """High-level orchestrator that wraps the LangGraph workflow."""
 
     def __init__(self, config: AppConfig) -> None:
+        self._log = logging.getLogger(__name__)
         self.config = config
         self.config.ensure_dirs()
         self.models = init_models(config)
@@ -42,7 +44,11 @@ class DeepResearchPipeline:
 
     def _build_search_tool(self) -> TavilySearchTool | None:
         if self.config.search.provider == "tavily":
-            return TavilySearchTool(self.config.search.tavily_api_key)
+            key = self.config.search.tavily_api_key
+            if not key:
+                self._log.warning("Tavily provider selected but TAVILY_API_KEY is missing; disabling web search.")
+                return None
+            return TavilySearchTool(key)
         return None
 
     def _build_graph(self):

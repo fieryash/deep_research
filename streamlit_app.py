@@ -75,6 +75,9 @@ with st.sidebar:
 
 pipeline = load_pipeline()
 
+if pipeline.search_tool is None and pipeline.config.search.provider == "tavily":
+    st.warning("TAVILY_API_KEY missing; Tavily web search disabled.")
+
 with st.form("research-form"):
     question = st.text_area("What should we investigate?", height=120)
     scope = st.text_input("Optional scope or constraints")
