@@ -71,7 +71,7 @@ with st.sidebar:
     st.write("Values pulled from your .env file via AppConfig.")
     if st.button("Reload settings"):
         st.cache_resource.clear()
-        st.experimental_rerun()
+        st.rerun()
 
 pipeline = load_pipeline()
 
