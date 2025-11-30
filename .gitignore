@@ -11,6 +11,7 @@ __pycache__/
 venv/
 .env
 .env.*
+.streamlit/secrets.toml
 
 # Tooling / caches
 .cache/
@@ -26,3 +27,4 @@ logs/
 .vscode/
 .idea/
 .DS_Store
+.streamlit/secrets.example.toml
