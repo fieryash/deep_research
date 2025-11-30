@@ -64,6 +64,16 @@ Need to verify Gemini access or enumerate models? Use the helper scripts:
 - `python list_models.py` - calls `google.generativeai` to list models exposing `generateContent`.
 - `python verify_gemini.py` - sanity checks `AppConfig`, confirms Gemini is selected, and (optionally) instantiates the LangChain wrappers.
 
+### Streamlit Cloud secrets
+
+If deploying to Streamlit Cloud, put your keys in `.streamlit/secrets.toml` (same names as `.env`). The app copies flat entries into environment variables before constructing `AppConfig`. Example:
+
+```toml
+OPENAI_API_KEY = "sk-..."
+TAVILY_API_KEY = "tvly-..."
+MODELS__RESEARCHER_MODEL = "openai/gpt-4o-mini"
+```
+
 ---
 
 ## Usage

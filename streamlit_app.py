@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -20,6 +21,11 @@ from deep_research.graph import DeepResearchPipeline, ResearchRunResult
 
 @st.cache_resource(show_spinner=False)
 def load_pipeline() -> DeepResearchPipeline:
+    # On Streamlit Cloud, secrets live in .streamlit/secrets.toml. Copy any flat entries into
+    # the environment so AppConfig picks them up the same way as .env.
+    for key, value in getattr(st, "secrets", {}).items():
+        if isinstance(value, (str, int, float, bool)):
+            os.environ.setdefault(key, str(value))
     config = AppConfig()
     return DeepResearchPipeline(config)
 
